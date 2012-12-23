@@ -22,29 +22,40 @@
 ; forward declaration of redraw function, which sadly can't be called 'redraw'
 (def redrawhull)
 
-(def svg
-  (-> d3 (.select "body") (.append "svg")
-    (.attr "width" width)
-    (.attr "height" height)
+(defn gen-svg []
+  (let [svg 
+      (-> d3 (.select "body") (.append "svg")
+        (.attr "width" width)
+        (.attr "height" height))]
+;    (.on svg "click" #(do (swap! vert-atom conj [100 100]) (redrawhull svg)))
+    (.on svg "click" #(.log js/console (.mouse d3 svg)))
+;    (.on svg "click" #(do (redrawhull svg)))
+    svg))
+
 ;    (.on "click" #(.log js/console (.mouse d3 js/this)))
-    (.on "click" #(do (swap! vert-atom conj [100 100]) (redrawhull)))
-    ))
+    ; (.on "click" #(do (swap! vert-atom conj [100 100]) (redrawhull)))
+    ; ))
 
 ; draw a border
-(-> svg (.append "rect")
-    (.attr "width" width)
-    (.attr "height" height))
+(defn draw-border [svg]
+  (-> svg (.append "rect")
+      (.attr "width" width)
+      (.attr "height" height)))
 
-(def hull
+(defn hull [svg]
   (-> svg (.append "path")
       (.attr "class" "hull")))
 
 (def circle 
-  (atom (.selectAll svg "circle")))
+  (atom nil))
 
-(defn redrawhull[]
+(defn circle-setup [svg]
+  (reset! circle (.selectAll svg "circle")))
+
+(defn redrawhull [svg]
   (let [verts (vert-array)]
-    (-> (.datum hull 
+    (.log js/console verts)
+    (-> (.datum (hull svg)
       (-> d3 .-geom (.hull verts)))
         (.attr "d" #(str "M" (join "L" %) "Z")))
     (swap! circle #(.data % verts))
@@ -54,7 +65,10 @@
       (.attr "transform" #(str "translate(" % ")")))))
 
 (defn ^:export launch []
-  (redrawhull)
-  (.log js/console (vert-array))
-  ; (redrawhull)
+  (let [svg (gen-svg)]
+    (draw-border svg)
+    (circle-setup svg)
+    (redrawhull svg)
+  )
+  ; (.log js/console (vert-array))
   true)

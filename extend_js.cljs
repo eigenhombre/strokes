@@ -24,6 +24,7 @@
        (assoc! m k (apply f (get m k) args)))))
 
 ;;To use Clojure's idiomatic seq-manipulation functions (filter, remove, &c.) on JavaScript arrays and objects we need to lift cljs.core's functions into ones that can delegate into JavaScript or ClojureScript appropriate implementations.
+;;TODO: macro away this ugliness, and put together some benchmarks to see which is faster: multimethods or a double fn call that uses protocols with a fascade to keep the collection as the second fn argument to match clojure.core's seq-related fn style.
 (defn seqtype [x]
   (cond
    (goog.isArray x)  :js-arr

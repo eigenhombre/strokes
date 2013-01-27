@@ -27,9 +27,9 @@
 ;;TODO: macro away this ugliness, and put together some benchmarks to see which is faster: multimethods or a double fn call that uses protocols with a fascade to keep the collection as the second fn argument to match clojure.core's seq-related fn style.
 (defn seqtype [x]
   (cond
-   (goog.isArray x)  :js-arr
-   (seq? x)          :seq
-   (goog.isObject x) :js-obj))
+    (goog.isArray x)  :js-arr
+    (seq? x)          :seq
+    (goog.isObject x) :js-obj))
 
 
 (defmulti filter (fn [pred coll] (seqtype coll)))
@@ -80,10 +80,10 @@
     ([o k]
        (aget o (strkey k)))
     ([o k not-found]
-      (let [s (strkey k)]
-        (if (goog.object.containsKey o s)
-          (aget o s) 
-          not-found))))
+       (let [s (strkey k)]
+         (if (goog.object.containsKey o s)
+           (aget o s)
+           not-found))))
 
   IEmptyableCollection
   (-empty [_]
@@ -121,3 +121,53 @@
   (-assoc! [a k v]
     (aset a (strkey k) v)
     a))
+
+
+;;jQuery extensions taken from Chris's jayq.
+(extend-type js/jQuery
+  ISeqable
+  (-seq [this] (when (.get this 0)
+                 this))
+  ISeq
+  (-first [this] (.get this 0))
+  (-rest [this] (if (> (count this) 1)
+                  (.slice this 1)
+                  (list)))
+
+  ICounted
+  (-count [this] (.-length this))
+
+  IIndexed
+  (-nth
+    ([this n]
+       (when (< n (count this))
+         (.slice this n (inc n))))
+    ([this n not-found]
+       (if (< n (count this))
+         (.slice this n (inc n))
+         (if (undefined? not-found)
+           nil
+           not-found))))
+
+  ISequential
+
+  ILookup
+  (-lookup
+    ([this k]
+       (or (.slice this k (inc k)) nil))
+    ([this k not-found]
+       (-nth this k not-found)))
+
+  IReduce
+  (-reduce
+    ([this f]
+       (ci-reduce this f))
+    ([this f start]
+       (ci-reduce this f start)))
+
+  IFn
+  (-invoke
+    ([this k]
+       (-lookup this k))
+    ([this k not-found]
+       (-lookup this k not-found))))

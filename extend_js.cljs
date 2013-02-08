@@ -58,7 +58,8 @@
 
 (defmethod map :js-arr
   [f a]
-  (.map a f))
+  ;;defend against the extra two arguments that Array.map passes into f; we want the same semantics as CLJS map (i.e., the mapper fn gets just the item)
+  (.map a #(f %1)))
 
 (defmethod map :seq
   [f coll]

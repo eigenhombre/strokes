@@ -112,7 +112,14 @@
   ITransientMap
   (-dissoc! [o key]
     (gobject/remove o key)
-    o))
+    o)
+
+  ISeqable
+  (-seq [o]
+    (let [keys (gobject/getKeys o)]
+      (when (pos? (alength keys))
+        (map #(vector % (aget o %))
+             (sort keys))))))
 
 (extend-type array
   IEmptyableCollection
